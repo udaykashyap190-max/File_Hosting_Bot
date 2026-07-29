@@ -1,0 +1,18 @@
+
+
+========================================
+STARTING FILE: MEXXYGOD (1).py
+========================================
+[1t[c[?1004h[?9001hTraceback (most recent call last):
+  File [35m"D:\Logs Bot\uploads\7882074153\MEXXYGOD (1).py"[0m, line [35m17[0m, in [35m<module>[0m
+    import aiohttp
+[1;35mModuleNotFoundError[0m: [35mNo module named 'aiohttp'[0m
+
+
+========================================
+STARTING FILE: MEXXYGOD (1).py
+========================================
+[1t[c[?1004h[?9001hTraceback (most recent call last):
+  File [35m"D:\Logs Bot\uploads\7882074153\MEXXYGOD (1).py"[0m, line [35m17[0m, in [35m<module>[0m
+    import aiohttp
+[1;35mModuleNotFoundError[0m: [35mNo module named 'aiohttp'[0m

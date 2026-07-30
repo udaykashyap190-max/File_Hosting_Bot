@@ -397,100 +397,135 @@ def add_file(
 
 ):
 
-    connection = get_connection()
+    # Try to insert, but if the table doesn't exist -> initialize DB and retry once.
+    try:
+        connection = get_connection()
+        cursor = connection.cursor()
 
-    cursor = connection.cursor()
+        uploaded_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+        cursor.execute(
+            """
+            INSERT INTO files
+            (
+                user_id,
+                filename,
+                file_path,
+                uploaded_at,
+                status,
+                pid,
+                log_path
+            )
 
-    uploaded_at = datetime.now().strftime(
+            VALUES (?, ?, ?, ?, ?, ?, ?)
 
-        "%Y-%m-%d %H:%M:%S"
-
-    )
-
-
-    cursor.execute(
-
-        """
-        INSERT INTO files
-        (
-            user_id,
-            filename,
-            file_path,
-            uploaded_at,
-            status,
-            pid,
-            log_path
+            """,
+            (
+                int(user_id),
+                filename,
+                str(file_path),
+                uploaded_at,
+                "stopped",
+                None,
+                str(log_path or "")
+            )
         )
 
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        file_id = cursor.lastrowid
 
-        """,
+        connection.commit()
+        connection.close()
 
-        (
-            int(user_id),
-            filename,
-            str(file_path),
-            uploaded_at,
-            "stopped",
-            None,
-            str(log_path or "")
-        )
+        return file_id
 
-    )
+    except sqlite3.OperationalError as e:
+        if "no such table" in str(e).lower():
+            # Initialize DB and retry once
+            try:
+                init_database()
+                connection = get_connection()
+                cursor = connection.cursor()
 
+                uploaded_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    file_id = cursor.lastrowid
+                cursor.execute(
+                    """
+                    INSERT INTO files
+                    (
+                        user_id,
+                        filename,
+                        file_path,
+                        uploaded_at,
+                        status,
+                        pid,
+                        log_path
+                    )
 
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
 
-    connection.commit()
+                    """,
+                    (
+                        int(user_id),
+                        filename,
+                        str(file_path),
+                        uploaded_at,
+                        "stopped",
+                        None,
+                        str(log_path or "")
+                    )
+                )
 
-    connection.close()
-
-
-    return file_id
+                file_id = cursor.lastrowid
+                connection.commit()
+                connection.close()
+                return file_id
+            except Exception:
+                try:
+                    connection.close()
+                except Exception:
+                    pass
+                return None
+        else:
+            raise
 
 
 def get_user_files(user_id):
 
-    connection = get_connection()
+    try:
+        connection = get_connection()
+        cursor = connection.cursor()
 
-    cursor = connection.cursor()
+        cursor.execute(
+            """
+            SELECT
+                id,
+                user_id,
+                filename,
+                file_path,
+                uploaded_at,
+                status,
+                pid,
+                log_path
 
+            FROM files
 
-    cursor.execute(
+            WHERE user_id = ?
 
-        """
-        SELECT
-            id,
-            user_id,
-            filename,
-            file_path,
-            uploaded_at,
-            status,
-            pid,
-            log_path
+            ORDER BY uploaded_at DESC
 
-        FROM files
+            """,
+            (int(user_id),)
+        )
 
-        WHERE user_id = ?
+        rows = cursor.fetchall()
+        connection.close()
+        return rows
 
-        ORDER BY uploaded_at DESC
-
-        """,
-
-        (int(user_id),)
-
-    )
-
-
-    rows = cursor.fetchall()
-
-
-    connection.close()
-
-
-    return rows
+    except sqlite3.OperationalError as e:
+        if "no such table" in str(e).lower():
+            init_database()
+            return []
+        raise
 
 
 def get_file(
@@ -729,22 +764,13 @@ def add_proxy(
         user_id = int(user_id_or_proxy)
 
 
-    connection = get_connection()
-
-    cursor = connection.cursor()
-
-
-    created_at = datetime.now().strftime(
-
-        "%Y-%m-%d %H:%M:%S"
-
-    )
-
-
     try:
+        connection = get_connection()
+        cursor = connection.cursor()
+
+        created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         cursor.execute(
-
             """
             INSERT INTO proxies
             (
@@ -756,59 +782,93 @@ def add_proxy(
             VALUES (?, ?, ?)
 
             """,
-
             (
                 int(user_id),
                 proxy,
                 created_at
             )
-
         )
 
-
         connection.commit()
-
         connection.close()
-
         return True
 
+    except sqlite3.OperationalError as e:
+        if "no such table" in str(e).lower():
+            init_database()
+            try:
+                connection = get_connection()
+                cursor = connection.cursor()
+                created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                cursor.execute(
+                    """
+                    INSERT INTO proxies
+                    (
+                        user_id,
+                        proxy,
+                        created_at
+                    )
+
+                    VALUES (?, ?, ?)
+
+                    """,
+                    (
+                        int(user_id),
+                        proxy,
+                        created_at
+                    )
+                )
+                connection.commit()
+                connection.close()
+                return True
+            except Exception:
+                try:
+                    connection.close()
+                except Exception:
+                    pass
+                return False
+        else:
+            connection.rollback()
+            connection.close()
+            return False
     except Exception:
-
-        connection.rollback()
-
-        connection.close()
-
+        try:
+            connection.rollback()
+        except Exception:
+            pass
+        try:
+            connection.close()
+        except Exception:
+            pass
         return False
 
 
 def get_all_proxies():
 
-    connection = get_connection()
+    try:
+        connection = get_connection()
+        cursor = connection.cursor()
 
-    cursor = connection.cursor()
+        cursor.execute(
+            """
+            SELECT *
 
+            FROM proxies
 
-    cursor.execute(
+            ORDER BY created_at DESC
 
-        """
-        SELECT *
+            """
 
-        FROM proxies
+        )
 
-        ORDER BY created_at DESC
-
-        """
-
-    )
-
-
-    rows = cursor.fetchall()
-
-
-    connection.close()
-
-
-    return rows
+        rows = cursor.fetchall()
+        connection.close()
+        return rows
+    except sqlite3.OperationalError as e:
+        if "no such table" in str(e).lower():
+            init_database()
+            return []
+        raise
 
 
 def get_proxies():

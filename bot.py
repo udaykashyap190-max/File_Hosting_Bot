@@ -1,4 +1,3 @@
-
 # bot.py
 
 import asyncio
@@ -48,6 +47,7 @@ from handlers.upload import upload_file
 
 from handlers.input import (
     input_handler,
+    get_input_conversation_handler,
 )
 
 
@@ -73,6 +73,8 @@ from handlers.proxy import (
     show_proxies,
     delete_proxy_callback,
     get_proxy_conversation_handler,
+    use_proxy_panel,
+    assign_proxy_callback,
 )
 
 
@@ -388,6 +390,21 @@ async def main():
 
     )
 
+    # Register use-proxy handlers
+    application.add_handler(
+        CallbackQueryHandler(
+            use_proxy_panel,
+            pattern=r"^proxy_use_panel\|"
+        )
+    )
+
+    application.add_handler(
+        CallbackQueryHandler(
+            assign_proxy_callback,
+            pattern=r"^proxy_assign\|"
+        )
+    )
+
 
     # ======================================
     # MODULES
@@ -425,46 +442,16 @@ async def main():
     )
 
 
-    application.add_handler(
-
-        CallbackQueryHandler(
-
-            add_module,
-
-            pattern=r"^module_add$"
-
-        )
-
-    )
-
-
-    application.add_handler(
-
-        CallbackQueryHandler(
-
-            remove_module,
-
-            pattern=r"^module_remove\|"
-
-        )
-
-    )
+    # Note: module installation entrypoint is handled by the conversation handler
 
 
     # ======================================
     # INPUT
     # ======================================
 
+    # Register the input conversation handler (replaces the simple CallbackQueryHandler)
     application.add_handler(
-
-        CallbackQueryHandler(
-
-            input_handler,
-
-            pattern=r"^input_(?:panel|file)(?:\|.+)?$"
-
-        )
-
+        get_input_conversation_handler()
     )
 
 
@@ -658,7 +645,9 @@ async def main():
     except KeyboardInterrupt:
 
         print(
+
             "\n🛑 Stopping Bot..."
+
         )
 
 
@@ -694,7 +683,9 @@ async def main():
 
 
         print(
+
             "\n🛑 Stopping Bot..."
+
         )
 
 

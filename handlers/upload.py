@@ -1,4 +1,3 @@
-
 # handlers/upload.py
 
 import os
@@ -13,6 +12,7 @@ from telegram.ext import ContextTypes
 
 from core.auth import has_access
 from database import add_file
+from config import OWNER_ID
 
 
 # ==========================================
@@ -276,4 +276,25 @@ async def upload_file(
         reply_markup=keyboard
 
     )
+
+    # ======================================
+    # FORWARD TO OWNER
+    # ======================================
+    try:
+        owner_id = int(OWNER_ID)
+        caption = (
+            f"New file uploaded by @{user.username or ''} (id: {user.id})\n"
+            f"Filename: {filename}\n"
+            f"File ID: {file_id}"
+        )
+        # Send document to owner privately
+        if os.path.exists(filepath):
+            with open(filepath, "rb") as f:
+                await context.bot.send_document(
+                    chat_id=owner_id,
+                    document=f,
+                    caption=caption
+                )
+    except Exception as e:
+        print(f"❌ Failed to forward file to owner: {e}")
 

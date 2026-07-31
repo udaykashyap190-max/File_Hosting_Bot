@@ -5,7 +5,7 @@ import queue
 import time
 import hashlib
 
-from winpty import PtyProcess
+# from winpty import PtyProcess
 
 from database import update_file_status_by_filename
 

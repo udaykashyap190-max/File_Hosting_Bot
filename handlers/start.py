@@ -11,7 +11,7 @@ def user_main_keyboard():
         [InlineKeyboardButton("📁 My Files", callback_data="my_files")],
         [InlineKeyboardButton("⌨️ Input", callback_data="input_panel")],
         [InlineKeyboardButton("📦 Modules", callback_data="modules_panel")],
-        [InlineKeyboardButton("🌐 Proxy Manager", callback_data="proxy_panel")],
+      
     ]
     return InlineKeyboardMarkup(keyboard)
 
